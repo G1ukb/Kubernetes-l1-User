@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-program
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: springboot-postgres-k8s
+  namespace: k8s-program
+  labels:
+    name: springboot-postgres-k8s
+spec:
+  ports:
+    - nodePort: 30163
+      port: 8081
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: springboot-postgres-k8s
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-rest-user
+  namespace: k8s-program
+spec:
+  selector:
+    matchLabels:
+      app: springboot-postgres-k8s
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: springboot-postgres-k8s
+    spec:
+      containers:
+        - name: users
+          image: epamhlebbelski/spring-rest-user.jar
+          ports:
+            - containerPort: 8080
+          env:   # Setting Enviornmental Variables
+            - name: DB_HOST
+              value: $(POSTGRES_SERVICE_HOST)
+            - name: DB_PORT
+              value: $(POSTGRES_SERVICE_PORT)
+            - name: DB_NAME  # Setting Database name from configMap
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-conf
+                  key: name
+            - name: POSTGRES_USER  # Setting Database username from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials # Secret Name
+                  key: postgres_user
+            - name: POSTGRES_PASSWORD # Setting Database password from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: postgres_password
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: post-app-pod-service
+  namespace: k8s-program
+  labels:
+    name: post-app-pod
+spec:
+  ports:
+    - nodePort: 30162
+      port: 8082
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: post-app-pod
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post-app
+  namespace: k8s-program
+spec:
+  selector:
+    matchLabels:
+      app: post-app-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: post-app-pod
+        owner: epamhlebbelski
+    spec:
+      containers:
+        - name: spring-rest-post
+          image: epamhlebbelski/spring-rest-post.jar
+          ports:
+            - containerPort: 8080
+          env:   # Setting Enviornmental Variables
+            - name: DB_HOST
+              value: $(POSTGRES_SERVICE_HOST)
+            - name: DB_PORT
+              value: $(POSTGRES_SERVICE_PORT)
+            - name: DB_NAME  # Setting Database name from configMap
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-conf
+                  key: name
+            - name: POSTGRES_USER  # Setting Database username from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials # Secret Name
+                  key: postgres_user
+            - name: POSTGRES_PASSWORD # Setting Database password from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: postgres_password
+
+#---
+#
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: sample-app
+#  namespace: k8s-program
+#spec:
+#  selector:
+#    matchLabels:
+#      app: sample-app-pod
+#  replicas: 1
+#  template:
+#    metadata:
+#      labels:
+#        app: sample-app-pod
+#        owner: hlebbelski
+#    spec:
+#      containers:
+#        - name: sample-app
+#          image: epamhlebbelski/sample-app.jar
+#          ports:
+#            - containerPort: 8080

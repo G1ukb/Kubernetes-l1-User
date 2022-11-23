@@ -1,0 +1,16 @@
+docker build -t spring-rest-user.jar ./
+docker tag spring-rest-user.jar epamhlebbelski/spring-rest-user.jar
+docker push epamhlebbelski/spring-rest-user.jar
+
+docker build -t spring-rest-post.jar ./
+docker tag spring-rest-post.jar epamhlebbelski/spring-rest-post.jar
+docker push epamhlebbelski/spring-rest-post.jar
+
+docker build -t app.jar ./
+docker tag app.jar epamhlebbelski/app.jar
+docker push epamhlebbelski/app.jar
+
+kubectl apply -f mysql-secrets.yaml
+kubectl apply -f mysql-configMap.yaml
+kubectl apply -f mysql-deployment.yaml
+kubectl apply -f app-deployment.yaml

@@ -9,70 +9,50 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 @RestController
 public class UserController {
 
-    UserService userService;
-    List<User> mockedUsers = new ArrayList<>(Arrays.asList(new User(0, "0", "0"),
-                                                            new User(1, "1", "1")));
-
     @Autowired
-    UserController(UserService userService) {
-        this.userService = userService;
-        userService.addUsers(mockedUsers);
+    UserRepo userRepo;
+
+    @GetMapping("/hello")
+    public String hello() {
+        return "hi, i am userRepo";
     }
 
     @GetMapping("/users")
     public User greeting(@RequestParam(value = "id") int id) {
-        return findUserById(id);
+        return userRepo.findById(id);
     }
 
     @PostMapping("/users")
     public User addUser(@RequestBody User user) {
-        user.setId(userService.getUserList().size() + 1);
         user.setAmount(String.valueOf(0));
-        userService.addUser(user);
-        return user;
+        return userRepo.save(user);
     }
 
     @DeleteMapping("/users")
     public void deleteUser(@RequestParam(value = "id") int id) {
-        User userById = findUserById(id);
-        userService.getUserList().remove(userById);
+        userRepo.delete(userRepo.findById(id));
     }
 
     @PutMapping("/users")
     public User updateUser(@RequestParam(value = "id") int id, @RequestBody User user) {
-        User userById = findUserById(id);
-        if (userById != null) {
-            userById.setUsername(user.getUsername());
-        }
-        return userById;
+        return userRepo.save(userRepo.findById(id));
     }
 
-    @PutMapping("/users/amount")
-    public void updateUserAmountById(@RequestParam(value = "id") int id,
-                                     @RequestParam(value = "isDecreased") boolean isDecreased) {
-        User userById = findUserById(id);
-        if (userById != null) {
-            if (isDecreased)
-                userById.setAmount(String.valueOf(Integer.parseInt(userById.getAmount()) + 1));
-            else
-                userById.setAmount(String.valueOf(Integer.parseInt(userById.getAmount()) - 1));
-        }
+    @PutMapping("/users/upAmount")
+    public User upUserAmount(@RequestParam(value = "id") int id) {
+        User user = userRepo.findById(id);
+        user.setAmount(String.valueOf(Integer.parseInt(user.getAmount()) + 1));
+        return userRepo.save(user);
     }
 
-    private User findUserById(int id) {
-        for (User next : userService.getUserList()) {
-            if (next.getId() == id) {
-                return next;
-            }
-        }
-        return null;
+    @PutMapping("/users/downAmount")
+    public User downUserAmount(@RequestParam(value = "id") int id) {
+        User user = userRepo.findById(id);
+        user.setAmount(String.valueOf(Integer.parseInt(user.getAmount()) - 1));
+        return userRepo.save(user);
     }
 
 }

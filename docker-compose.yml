@@ -1,0 +1,33 @@
+version: '3.0'
+
+services:
+
+  user:
+    build: .
+    restart: always
+    image: spring-rest-user.jar
+    ports:
+      - 8081:8081
+    depends_on:
+      - user-db
+
+  post:
+    build: .
+    restart: always
+    image: spring-rest-post.jar
+    ports:
+      - 8082:8082
+    depends_on:
+      - user-db
+
+  user-db:
+    image: "mysql:8.0"
+    restart: always
+    ports:
+      - 3308:3306
+    environment:
+      MYSQL_DATABASE: pgs
+      MYSQL_PASSWORD: 1111
+      MYSQL_ROOT_PASSWORD: 1111
+    volumes:
+      - "./sqlscripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql"
